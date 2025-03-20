@@ -1,7 +1,10 @@
 (ns app.core
-  (:require [three :refer [BoxGeometry MeshBasicMaterial Mesh Scene PerspectiveCamera WebGLRenderer]]
-            ["three/addons/controls/OrbitControls.js" :refer [OrbitControls]]
-            ["@dimforge/rapier3d-compat" :as rapier]))
+  (:require
+   ["@dimforge/rapier3d-compat" :as rapier]
+   ["three/addons/controls/OrbitControls.js" :refer [OrbitControls]]
+   [three :refer [BoxGeometry BufferAttribute BufferGeometry LineBasicMaterial
+                  LineSegments Mesh MeshBasicMaterial PerspectiveCamera Scene
+                  WebGLRenderer]]))
 
 (defn- prepare-container! [id]
   (let [container (js/document.getElementById id)]
@@ -38,6 +41,33 @@
     (.set (.-scale mesh) 2 2 2)
     (.updateMatrix mesh)))
 
+(defn debug-render [^js lines ^js world]
+  (let [buffers (.debugRender world)]
+    (.setAttribute (.-geometry lines) "position" (new BufferAttribute (.-vertices buffers) 3))
+    (.setAttribute (.-geometry lines) "color" (new BufferAttribute (.-colors buffers) 4))))
+
+(defn static-cube [^js world ^js scene {:keys [x y z]} {x-size :x y-size :y z-size :z} color]
+  (let [^js collider-desc ((-> rapier .-ColliderDesc .-cuboid) x-size y-size z-size)
+        ^js collider (.createCollider world (.setTranslation collider-desc x y z))
+        ^js geometry (new BoxGeometry x-size y-size z-size)
+        ^js material (new MeshBasicMaterial #js {:color color})
+        ^js mesh (new Mesh geometry material)]
+    (.add scene mesh)
+    (sync-mesh-collider mesh collider)
+    {:mesh mesh :collider collider}))
+
+(defn rigid-cube [^js world ^js scene {:keys [x y z]} {x-size :x y-size :y z-size :z} color]
+  (let [^js rigid-body-desc (.setTranslation (-> rapier .-RigidBodyDesc .dynamic) x y z)
+        ^js rigid-body (.createRigidBody world rigid-body-desc)
+        ^js collider-desc ((-> rapier .-ColliderDesc .-cuboid) x-size y-size z-size)
+        ^js collider (.createCollider world collider-desc rigid-body)
+        ^js geometry (new BoxGeometry x-size y-size z-size)
+        ^js material (new MeshBasicMaterial #js {:color color})
+        ^js mesh (new Mesh geometry material)]
+    (.add scene mesh)
+    (sync-mesh-collider mesh collider)
+    {:mesh mesh :collider collider :rigid-body rigid-body}))
+
 (defn app []
   (let [{:keys [^Scene scene
                 ^PerspectiveCamera camera
@@ -45,30 +75,21 @@
         gravity #js {:x 0.0 :y -9.81 :z 0.0}
         ^js world (new (.-World rapier) gravity)
 
-        ^js ground-desc ((-> rapier .-ColliderDesc .-cuboid) 10.0 0.1 10.0)
-        ^js ground-collider (.createCollider world ground-desc)
-        ^js ground-geometry (new BoxGeometry 10.0 0.1 10.0)
-        ^js ground-material (new MeshBasicMaterial #js {:color 0x00ff00})
-        ^js ground-mesh (new Mesh ground-geometry ground-material)
+        ^js debug-material (new LineBasicMaterial #js {:color 0xffffff :vertexColors true})
+        ^js debug-geometry (new BufferGeometry)
+        ^js debug-lines (new LineSegments debug-geometry debug-material)
 
-        ^js rigid-body-desc (.setTranslation (-> rapier .-RigidBodyDesc .dynamic) 0.0 2.5 0.0)
-        ^js rigid-body (.createRigidBody world rigid-body-desc)
-        ^js rigid-body-collider-desc ((-> rapier .-ColliderDesc .-cuboid) 0.5 0.5 0.5)
-        ^js rigid-body-collider (.createCollider world rigid-body-collider-desc rigid-body)
-        ^js rigid-body-geometry (new BoxGeometry 0.5 0.5 0.5)
-        ^js rigid-body-material (new MeshBasicMaterial #js {:color 0x0000ff})
-        ^js rigid-body-mesh (new Mesh rigid-body-geometry rigid-body-material)]
+        ^js ground (static-cube world scene {:x 0.0 :y 0.0 :z 0.0} {:x 10.0 :y 0.1 :z 10.0} 0x00ff00)
+        ^js rigid-body (rigid-cube world scene {:x 0.0 :y 2.5 :z 0.0} {:x 0.5 :y 0.5 :z 0.5} 0x0000ff)
 
-    ; ground
-    (.add scene ground-mesh)
-    (sync-mesh-collider ground-mesh ground-collider)
-
-    ; rigid body
-    (.add scene rigid-body-mesh)
-    (sync-mesh-collider rigid-body-mesh rigid-body-collider)
-
+        objects [ground rigid-body]]
+    ;debug lines
+    (.add scene debug-lines)
+    ; render loop
     (.setAnimationLoop renderer (fn ^js []
-                                  (sync-mesh-collider rigid-body-mesh rigid-body-collider)
+                                  (doseq [{:keys [mesh collider]} objects]
+                                    (sync-mesh-collider mesh collider))
+                                  (debug-render debug-lines world)
                                   (.step world)
                                   (.render renderer scene camera)))))
 
