@@ -1,0 +1,24 @@
+{
+  "name": "cljs-threejs-rapier",
+  "version": "1.0.0",
+  "description": "Quick study over the ergonomics of using cljs + threejs + rapier",
+  "homepage": "https://github.com/rafaeldelboni/cljs-threejs-rapier#readme",
+  "bugs": {
+    "url": "https://github.com/rafaeldelboni/cljs-threejs-rapier/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rafaeldelboni/cljs-threejs-rapier.git"
+  },
+  "scripts": {
+    "start": "shadow-cljs watch app",
+    "release": "shadow-cljs release app"
+  },
+  "dependencies": {
+    "@dimforge/rapier3d-compat": "^0.15.0",
+    "three": "^0.174.0"
+  },
+  "devDependencies": {
+    "shadow-cljs": "^2.28.21"
+  }
+}
