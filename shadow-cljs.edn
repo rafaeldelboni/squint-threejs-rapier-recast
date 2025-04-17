@@ -5,14 +5,16 @@
                 :output-dir       "resources/public/js"
                 :asset-path       "/js"
                 :modules {:core {:entries [app.core]}}
-                :dev {:build-hooks [(app.shadow.hooks/build-index
+                :js-options {:js-provider :external
+                             :external-index "resources/public/js/lib.js"
+                             :external-index-format :esm}
+                :dev {:build-hooks [(app.shadow.hooks/esbuild-watch
+                                     "resources/public/js/lib.js"
+                                     "resources/public/js/lib.bundle.js")
+                                    (app.shadow.hooks/build-index
                                      "resources/index.src.html"
                                      "resources/public/index.html")]}
-                :release {; bundling
-                          :js-options {:js-provider :external
-                                       :external-index "resources/public/js/lib.js"
-                                       :external-index-format :esm}
-                          :build-hooks [(app.shadow.hooks/esbuild
+                :release {:build-hooks [(app.shadow.hooks/esbuild
                                          "resources/public/js/lib.js"
                                          "resources/public/js/lib.bundle.js")
                                         (app.shadow.hooks/hashed-files

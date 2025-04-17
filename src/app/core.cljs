@@ -80,9 +80,10 @@
         ^js debug-lines (new LineSegments debug-geometry debug-material)
 
         ^js ground (static-cube world scene {:x 0.0 :y 0.0 :z 0.0} {:x 10.0 :y 0.1 :z 10.0} 0x00ff00)
-        ^js rigid-body (rigid-cube world scene {:x 0.0 :y 2.5 :z 0.0} {:x 0.5 :y 0.5 :z 0.5} 0x0000ff)
+        ^js rigid-body1 (rigid-cube world scene {:x 1.0 :y 5 :z 0.0} {:x 0.5 :y 0.5 :z 0.5} 0x0000ff)
+        ^js rigid-body2 (rigid-cube world scene {:x 0.0 :y 2.5 :z 0.0} {:x 0.5 :y 0.5 :z 0.5} 0x0000ff)
 
-        objects [ground rigid-body]]
+        objects [ground rigid-body1 rigid-body2]]
     ;debug lines
     (.add scene debug-lines)
     ; render loop

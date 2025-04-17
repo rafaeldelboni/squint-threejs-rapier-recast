@@ -6,6 +6,28 @@
    [shadow.build :as build]
    [shadow.cljs.util :as util]))
 
+(defn async-process [cmd]
+  (let [;; Redirect output to stdout.
+        ;; inheritIO also redirects stdin, some tools might not like that.
+        builder (-> (ProcessBuilder. ^"[Ljava.lang.String;" (into-array String cmd))
+                    (.redirectError java.lang.ProcessBuilder$Redirect/INHERIT)
+                    (.redirectOutput java.lang.ProcessBuilder$Redirect/INHERIT))
+        process (.start builder)]
+    ;; Also stop processes when shadow-cljs is stopped.
+    (.addShutdownHook (Runtime/getRuntime) (Thread. (fn [] (.destroy process))))
+    process))
+
+#_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
+(defn esbuild-watch
+  {:shadow.build/stages #{:configure}}
+  [build-state bundle outfile]
+  (let [base-cmd ["npx" "esbuild" "--watch" "--bundle" bundle (str "--outfile=" outfile)]
+        watch-process (async-process base-cmd)]
+    (apply shell/sh ["touch" bundle])
+    (util/log build-state {:type ::esbuild-watch :result watch-process})
+    (async-process base-cmd)
+    (assoc build-state ::esbuild-watch watch-process)))
+
 #_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
 (defn esbuild
   {:shadow.build/stages #{:compile-prepare :flush}}
@@ -81,12 +103,7 @@
         (assoc build-state ::source-last-mod (.lastModified source-file)))
 
       (= :dev mode)
-      (let [html (slurp source-file)
-            ; ugly, removes lib bundle from dev build index
-            dev-html (str/replace html
-                                  "  <script src=\"/js/lib.bundle.js\"></script>"
-                                  "")]
-
+      (let [html (slurp source-file)]
         (io/make-parents target-file)
-        (spit target-file dev-html)
+        (spit target-file html)
         (assoc build-state ::source-last-mod (.lastModified source-file))))))
