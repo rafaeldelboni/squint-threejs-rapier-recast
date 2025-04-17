@@ -1,4 +1,5 @@
-{:lint-as
+{:ignore [:redundant-ignore]
+ :lint-as
  {rewrite-clj.zip/subedit-> clojure.core/->
   rewrite-clj.zip/subedit->> clojure.core/->>
   rewrite-clj.zip/edit-> clojure.core/->
