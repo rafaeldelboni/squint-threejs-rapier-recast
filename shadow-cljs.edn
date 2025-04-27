@@ -8,18 +8,19 @@
                 :js-options {:js-provider :external
                              :external-index "resources/public/js/lib.js"
                              :external-index-format :esm}
+                :build-hooks [(app.shadow.hooks/configure-sh
+                               :prep-lib
+                               "touch"
+                               "resources/public/js/lib.js")
+                              (app.shadow.hooks/build-index
+                               "resources/index.src.html"
+                               "resources/public/index.html")]
                 :dev {:build-hooks [(app.shadow.hooks/esbuild-watch
                                      "resources/public/js/lib.js"
-                                     "resources/public/js/lib.bundle.js")
-                                    (app.shadow.hooks/build-index
-                                     "resources/index.src.html"
-                                     "resources/public/index.html")]}
+                                     "resources/public/js/lib.bundle.js")]}
                 :release {:build-hooks [(app.shadow.hooks/esbuild
                                          "resources/public/js/lib.js"
                                          "resources/public/js/lib.bundle.js")
                                         (app.shadow.hooks/hashed-files
                                          ["resources/public/js/core.js"
-                                          "resources/public/js/lib.bundle.js"])
-                                        (app.shadow.hooks/build-index
-                                         "resources/index.src.html"
-                                         "resources/public/index.html")]}}}}
+                                          "resources/public/js/lib.bundle.js"])]}}}}

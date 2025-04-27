@@ -6,7 +6,7 @@
    [shadow.build :as build]
    [shadow.cljs.util :as util]))
 
-(defn async-process [cmd]
+(defn async-sh [cmd]
   (let [;; Redirect output to stdout.
         ;; inheritIO also redirects stdin, some tools might not like that.
         builder (-> (ProcessBuilder. ^"[Ljava.lang.String;" (into-array String cmd))
@@ -18,14 +18,22 @@
     process))
 
 #_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
+(defn configure-sh
+  {:shadow.build/stage :configure}
+  [build-state hook-name & cmd]
+  (let [result (apply shell/sh cmd)]
+    (util/log build-state {:type hook-name :result result})
+    (assoc build-state hook-name result)))
+
+#_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
 (defn esbuild-watch
   {:shadow.build/stages #{:configure}}
   [build-state bundle outfile]
+  (apply shell/sh ["touch" bundle])
   (let [base-cmd ["npx" "esbuild" "--watch" "--bundle" bundle (str "--outfile=" outfile)]
-        watch-process (async-process base-cmd)]
-    (apply shell/sh ["touch" bundle])
+        watch-process (async-sh base-cmd)]
     (util/log build-state {:type ::esbuild-watch :result watch-process})
-    (async-process base-cmd)
+    (async-sh base-cmd)
     (assoc build-state ::esbuild-watch watch-process)))
 
 #_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
@@ -51,27 +59,26 @@
 (defn hashed-files
   {:shadow.build/stage :flush}
   [{::build/keys [mode] :as build-state} files]
-  (doall
-   (assoc build-state ::hashed-files
-          (for [old-file-full-path files]
-            (let [old-file (io/file old-file-full-path)
-                  old-file-name (.getName old-file)]
-              (if (= :release mode)
-                (let [contents (slurp old-file-full-path)
-                      old-file-path (.getParentFile old-file)
-                      new-file-name (str (util/md5hex contents) "." old-file-name)
-                      new-file-full-path (str old-file-path "/" new-file-name)
-                      new-file (io/file new-file-full-path)]
-                  (.renameTo old-file new-file)
-                  {:old-file-full-path old-file-full-path
-                   :old-file-name old-file-name
-                   :new-file-full-path new-file-full-path
-                   :new-file-name new-file-name})
-
-                {:old-file-full-path old-file-full-path
-                 :old-file-name old-file-name
-                 :new-file-full-path old-file-full-path
-                 :new-file-name old-file-name}))))))
+  (let [result (doall
+                (for [old-file-full-path files]
+                  (let [old-file (io/file old-file-full-path)
+                        old-file-name (.getName old-file)]
+                    (if (= :release mode)
+                      (let [contents (slurp old-file-full-path)
+                            old-file-path (.getParentFile old-file)
+                            new-file-name (str (util/md5hex contents) "." old-file-name)
+                            new-file-full-path (str old-file-path "/" new-file-name)
+                            new-file (io/file new-file-full-path)]
+                        (.renameTo old-file new-file)
+                        {:old-file-full-path old-file-full-path
+                         :old-file-name old-file-name
+                         :new-file-full-path new-file-full-path
+                         :new-file-name new-file-name})
+                      {:old-file-full-path old-file-full-path
+                       :old-file-name old-file-name
+                       :new-file-full-path old-file-full-path
+                       :new-file-name old-file-name}))))]
+    (assoc build-state ::hashed-files result)))
 
 #_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
 (defn build-index
