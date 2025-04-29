@@ -6,7 +6,7 @@
    ["three/addons/loaders/GLTFLoader.js" :refer [GLTFLoader]]
    [three :refer [ACESFilmicToneMapping Box3 BufferAttribute BufferGeometry
                   Color LineBasicMaterial LineSegments PerspectiveCamera
-                  PMREMGenerator Scene Vector3 Quaternion WebGLRenderer]]))
+                  PMREMGenerator Scene Vector3 Quaternion Euler WebGLRenderer]]))
 
 (defn- prepare-container! [id]
   (let [container (js/document.getElementById id)]
@@ -47,16 +47,17 @@
 
 (defn sync-mesh-collider [^js mesh ^js collider]
   (let [^js collider-translation (.translation collider)
-        ^js collider-rotation (.rotation collider) ]
+        ^js collider-rotation (.rotation collider)]
     (.set (.-position mesh)
           (.-x collider-translation)
           (.-y collider-translation)
           (.-z collider-translation))
-    (.set (.-quaternion mesh)
-          (.-x collider-rotation)
-          (.-y collider-rotation)
-          (.-z collider-rotation)
-          (.-w collider-rotation))
+    (.setRotationFromQuaternion mesh
+                                (new Quaternion
+                                     (.-x collider-rotation)
+                                     (.-y collider-rotation)
+                                     (.-z collider-rotation)
+                                     (.-w collider-rotation)))
     (.updateMatrix mesh)))
 
 (defn debug-render [^js lines ^js world]
@@ -64,13 +65,16 @@
     (.setAttribute (.-geometry lines) "position" (new BufferAttribute (.-vertices buffers) 3))
     (.setAttribute (.-geometry lines) "color" (new BufferAttribute (.-colors buffers) 4))))
 
+(defn calc-reset-mesh [^js mesh]
+  (let [reset-mesh (.clone mesh)]
+    (.setRotationFromEuler reset-mesh (new Euler 0 0 0))
+    (.updateMatrixWorld reset-mesh)
+    reset-mesh))
+
 (defn static-cube [^js world ^js mesh]
   (-> mesh .-geometry .computeBoundingBox)
-  (let [^js box (new Box3)
-        ^js bounding-box (.getSize (-> box
-                                       (.copy (-> mesh .-geometry .-boundingBox))
-                                       (.applyMatrix4 (.-matrixWorld mesh)))
-                                   (new Vector3))
+  (let [reset-mesh (calc-reset-mesh mesh)
+        ^js bounding-box (.getSize (.setFromObject (new Box3) reset-mesh) (new Vector3))
         x-size (/ (.-x bounding-box) 2)
         y-size (/ (.-y bounding-box) 2)
         z-size (/ (.-z bounding-box) 2)
@@ -79,21 +83,31 @@
         z (-> mesh .-position .-z)
         ^js collider-desc ((-> rapier .-ColliderDesc .-cuboid) x-size y-size z-size)
         ^js collider (.createCollider world (-> collider-desc
-                                                (.setTranslation x y z)))]
+                                                (.setTranslation x y z)
+                                                (.setRotation #js {:x (-> mesh .-quaternion .-x)
+                                                                   :y (-> mesh .-quaternion .-y)
+                                                                   :z (-> mesh .-quaternion .-z)
+                                                                   :w (-> mesh .-quaternion .-w)})))]
     (sync-mesh-collider mesh collider)
     {:mesh mesh :collider collider}))
 
 (defn rigid-cube [^js world ^js mesh]
   (-> mesh .-geometry .computeBoundingBox)
-  (let [^js bounding-box (.getSize (.setFromObject (new Box3) mesh) (new Vector3))
+  (let [reset-mesh (calc-reset-mesh mesh)
+        ^js bounding-box (.getSize (.setFromObject (new Box3) reset-mesh) (new Vector3))
         x-size (/ (.-x bounding-box) 2)
         y-size (/ (.-y bounding-box) 2)
         z-size (/ (.-z bounding-box) 2)
         x (-> mesh .-position .-x)
         y (-> mesh .-position .-y)
         z (-> mesh .-position .-z)
-        ^js rigid-body-desc (.setTranslation (-> rapier .-RigidBodyDesc .dynamic) x y z)
-        ^js rigid-body (.createRigidBody world rigid-body-desc)
+        ^js rigid-body-desc (-> rapier .-RigidBodyDesc .dynamic)
+        ^js rigid-body (.createRigidBody world (-> rigid-body-desc
+                                                   (.setTranslation  x y z)
+                                                   (.setRotation #js {:x (-> mesh .-quaternion .-x)
+                                                                      :y (-> mesh .-quaternion .-y)
+                                                                      :z (-> mesh .-quaternion .-z)
+                                                                      :w (-> mesh .-quaternion .-w)})))
         ^js collider-desc ((-> rapier .-ColliderDesc .-cuboid) x-size y-size z-size)
         ^js collider (.createCollider world collider-desc rigid-body)]
     (sync-mesh-collider mesh collider)
