@@ -28,7 +28,7 @@
     (set! (.-background scene) (new Color 0xbbbbbb))
     (set! (.-environment scene) (.-texture generated-env))
     (set! (.-toneMapping renderer) ACESFilmicToneMapping)
-    (set! (.-toneMappingExposure renderer) 0.3)
+    (set! (.-toneMappingExposure renderer) 0.5)
     (.setSize renderer inner-width inner-height)
     (.appendChild container (.-domElement renderer))
     (.set (-> camera .-position) 0 5 -10)
@@ -144,14 +144,31 @@
                      nil)))
                meshes)))
 
+(def recast-config
+  #js {:borderSize 0,
+       :tileSize 0,
+       :cs 0.2,
+       :ch 0.2,
+       :walkableSlopeAngle 60,
+       :walkableHeight 2,
+       :walkableClimb 2,
+       :walkableRadius 1,
+       :maxEdgeLen 12,
+       :maxSimplificationError 1.3,
+       :minRegionArea 8,
+       :mergeRegionArea 20,
+       :maxVertsPerPoly 6,
+       :detailSampleDist 6,
+       :detailSampleMaxError 1})
+
 (defn children->navmesh
-  "https://github.com/isaac-mason/recast-navigation-js/blob/main/packages/recast-navigation-three/README.md"
+  "https://github.com/isaac-mason/recast-navigation-js/blob/main/packages/recast-navigation-three"
   [^js children]
   (let [meshes (filter (fn [^js child]
                          (and (.-isMesh child)
                               (= "static" (-> child .-userData .-collider_type))))
                        children)]
-    (threeToSoloNavMesh meshes #js {}))) ; TODO nees to set options
+    (threeToSoloNavMesh meshes recast-config)))
 
 (defn app [_]
   (let [{:keys [^Scene scene
