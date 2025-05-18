@@ -1,6 +1,6 @@
-# cljs-threejs-rapier
+# cljs-threejs-rapier-recast
 
-A focused exploration of the integration between ClojureScript, Three.js, and the Rapier physics engine.
+A focused exploration of the integration between ClojureScript, Three.js, Rapier physics engine and the Recast navmesh generation and navigation.
 
 > **Note:** The code within this repository is part of an initial exploration and may not reflect production-ready quality or best practices.
 

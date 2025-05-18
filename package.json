@@ -1,24 +1,26 @@
 {
-  "name": "cljs-threejs-rapier",
+  "name": "cljs-threejs-rapier-recast",
   "version": "1.0.0",
-  "description": "Quick study over the ergonomics of using cljs + threejs + rapier",
-  "homepage": "https://github.com/rafaeldelboni/cljs-threejs-rapier#readme",
+  "description": "Quick study over the ergonomics of using cljs + threejs + rapier + recast",
+  "homepage": "https://github.com/rafaeldelboni/cljs-threejs-rapier-recast#readme",
   "bugs": {
-    "url": "https://github.com/rafaeldelboni/cljs-threejs-rapier/issues"
+    "url": "https://github.com/rafaeldelboni/cljs-threejs-rapier-recast/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rafaeldelboni/cljs-threejs-rapier.git"
+    "url": "git+https://github.com/rafaeldelboni/cljs-threejs-rapier-recast.git"
   },
   "scripts": {
     "start": "shadow-cljs watch app",
     "release": "shadow-cljs release app"
   },
   "dependencies": {
-    "@dimforge/rapier3d-compat": "^0.15.0",
-    "three": "^0.174.0"
+    "@dimforge/rapier3d-compat": "^0.15.1",
+    "@recast-navigation/three": "^0.39.0",
+    "recast-navigation": "^0.39.0",
+    "three": "^0.176.0"
   },
   "devDependencies": {
-    "shadow-cljs": "^2.28.21"
+    "shadow-cljs": "^3.1.1"
   }
 }

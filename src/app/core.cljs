@@ -1,5 +1,7 @@
 (ns app.core
   (:require
+   ["@recast-navigation/core" :rename {init init-recast}]
+   ["@recast-navigation/three" :refer [threeToSoloNavMesh NavMeshHelper]]
    ["@dimforge/rapier3d-compat" :as rapier]
    ["three/addons/controls/OrbitControls.js" :refer [OrbitControls]]
    ["three/addons/environments/RoomEnvironment.js" :refer [RoomEnvironment]]
@@ -130,7 +132,28 @@
     (sync-mesh-collider mesh collider)
     {:mesh mesh :collider collider :rigid-body rigid-body}))
 
-(defn app []
+(defn children->physics-objects [^js meshes ^js world]
+  (doall (keep (fn [^js mesh]
+                 (let [extras (.-userData mesh)
+                       type (.-collider_type extras)
+                       shape (.-collider_shape extras)]
+                   (case [type shape]
+                     ["static" "box"] (static-cube world mesh)
+                     ["dynamic" "box"] (rigid-cube world mesh)
+                     ["dynamic" "sphere"] (rigid-sphere world mesh)
+                     nil)))
+               meshes)))
+
+(defn children->navmesh
+  "https://github.com/isaac-mason/recast-navigation-js/blob/main/packages/recast-navigation-three/README.md"
+  [^js children]
+  (let [meshes (filter (fn [^js child]
+                         (and (.-isMesh child)
+                              (= "static" (-> child .-userData .-collider_type))))
+                       children)]
+    (threeToSoloNavMesh meshes #js {}))) ; TODO nees to set options
+
+(defn app [_]
   (let [{:keys [^Scene scene
                 ^PerspectiveCamera camera
                 ^WebGLRenderer renderer]} system
@@ -141,29 +164,23 @@
         ^js debug-material (new LineBasicMaterial #js {:color 0xffffff :vertexColors true})
         ^js debug-geometry (new BufferGeometry)
         ^js debug-lines (new LineSegments debug-geometry debug-material)]
-    ;debug lines
-    (.add scene debug-lines)
+    (.add scene debug-lines) ;debug physics
     ; render loop
     (-> (load-async "assets/test-scene.glb")
         (.then (fn [^js gltf]
                  (.add scene (.-scene gltf))
                  (-> gltf .-scene (.updateMatrixWorld true))
-                 (let [objects (doall (keep (fn [^js mesh]
-                                              (let [extras (.-userData mesh)
-                                                    type (.-collider_type extras)
-                                                    shape (.-collider_shape extras)]
-                                                (case [type shape]
-                                                  ["static" "box"] (static-cube world mesh)
-                                                  ["dynamic" "box"] (rigid-cube world mesh)
-                                                  ["dynamic" "sphere"] (rigid-sphere world mesh)
-                                                  nil)))
-                                            (-> gltf .-scene .-children)))]
+                 (let [children (-> gltf .-scene .-children)
+                       physics-objects (children->physics-objects children world)
+                       navmesh (children->navmesh children)
+                       navMeshHelper (new NavMeshHelper (.-navMesh navmesh))]
+                   (.add scene navMeshHelper) ; debug navimesh
                    (.setAnimationLoop renderer (fn ^js []
-                                                 (doseq [{:keys [mesh collider]} objects]
+                                                 (doseq [{:keys [mesh collider]} physics-objects]
                                                    (sync-mesh-collider mesh collider))
                                                  (debug-render debug-lines world)
                                                  (.step world)
                                                  (.render renderer scene camera)))))))))
 
-(-> (.init rapier)
+(-> (.all js/Promise [(.init rapier) (init-recast)])
     (.then app))
