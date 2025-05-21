@@ -50,7 +50,7 @@
                   (fn [xhr] (js/console.log (str (* (/ xhr.loaded xhr.total) 100) "% loaded")))
                   (fn [error] (reject error)))))))
 
-(defn sync-mesh-collider [^js mesh ^js collider]
+(defn sync-mesh-collider! [^js mesh ^js collider]
   (let [^js collider-translation (.translation collider)
         ^js collider-rotation (.rotation collider)]
     (.set (.-position mesh)
@@ -65,9 +65,15 @@
                                      (.-w collider-rotation)))
     (.updateMatrix mesh)))
 
-(defn sync-agent-rigid-body [^js agent ^js rigid-body]
+(defn sync-agent-rigid-body! [^js agent ^js rigid-body]
   (let [{x "x" y "y" z "z"} (js->clj (.position agent))]
     (.setNextKinematicTranslation rigid-body #js {:x x :y (+ y 0.5) :z z})))
+
+(defn sync-object! [{:keys [agent rigid-body mesh collider]}]
+  (when (and agent rigid-body)
+    (sync-agent-rigid-body! agent rigid-body))
+  (when (and mesh collider)
+    (sync-mesh-collider! mesh collider)))
 
 (defn debug-render [^js lines ^js world]
   (let [buffers (.debugRender world)]
@@ -98,7 +104,7 @@
                                                                    :y (-> mesh .-quaternion .-y)
                                                                    :z (-> mesh .-quaternion .-z)
                                                                    :w (-> mesh .-quaternion .-w)})))]
-    (sync-mesh-collider mesh collider)
+    (sync-mesh-collider! mesh collider)
     {:mesh mesh :collider collider}))
 
 (defn rigid-cube [^js world ^js mesh]
@@ -120,7 +126,7 @@
                                                                       :w (-> mesh .-quaternion .-w)})))
         ^js collider-desc ((-> rapier .-ColliderDesc .-cuboid) x-size y-size z-size)
         ^js collider (.createCollider world collider-desc rigid-body)]
-    (sync-mesh-collider mesh collider)
+    (sync-mesh-collider! mesh collider)
     {:mesh mesh :collider collider :rigid-body rigid-body}))
 
 (defn rigid-sphere [^js world ^js mesh]
@@ -137,7 +143,7 @@
                                       (-> collider-desc
                                           (.setRestitution  0.5))
                                       rigid-body)]
-    (sync-mesh-collider mesh collider)
+    (sync-mesh-collider! mesh collider)
     {:mesh mesh :collider collider :rigid-body rigid-body}))
 
 (defn rigid-capsule-with-geometry [^js scene ^js world ^js crowd]
@@ -162,7 +168,7 @@
                                                            :maxAcceleration 10.0
                                                            :maxSpeed 6.0})]
     (.add scene mesh)
-    (sync-mesh-collider mesh collider)
+    (sync-mesh-collider! mesh collider)
     (.requestMoveTarget ^js agent #js {:x 3 :y 0.3 :z -3})
     {:mesh mesh :collider collider :rigid-body rigid-body :agent agent}))
 
@@ -227,18 +233,15 @@
                        crowd  (new Crowd (.-navMesh navmesh) #js {:maxAgents 1 :maxAgentRadius 0.5})
                        agent-object (rigid-capsule-with-geometry scene world crowd)
                        agents-objects [agent-object]
-                       physics-objects (into agents-objects (children->physics-objects children world))
+                       objects (into agents-objects (children->physics-objects children world))
                        navMeshHelper (new NavMeshHelper (.-navMesh navmesh))]
                    (.add scene navMeshHelper) ; debug navimesh
                    (.setAnimationLoop renderer (fn ^js []
                                                  (let [delta (.getDelta clock)]
-                                                   (doseq [{:keys [rigid-body agent]} agents-objects]
-                                                     (sync-agent-rigid-body agent rigid-body))
-                                                   (doseq [{:keys [mesh collider]} physics-objects]
-                                                     (sync-mesh-collider mesh collider))
+                                                   (doseq [obj objects] (sync-object! obj))
                                                    (debug-render debug-lines world)
-                                                   (.update crowd delta)
-                                                   (.step world)
+                                                   (.update crowd delta) ; recast crowd update
+                                                   (.step world) ; rapier world update
                                                    (.render renderer scene camera))))))))))
 
 (-> (.all js/Promise [(.init rapier) (init-recast)])
