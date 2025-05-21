@@ -25,6 +25,8 @@ pom.xml.asc
 .nrepl-*
 .DS_Store
 
+*.blend1
+
 .hgignore
 .hg/
 
