@@ -1,7 +1,7 @@
 (ns app.core
   (:require
    ["@dimforge/rapier3d-compat" :as rapier]
-   ["@recast-navigation/core" :refer [init Crowd]]
+   ["@recast-navigation/core" :refer [init Crowd] :rename {init initRecast}]
    ["@recast-navigation/three" :refer [NavMeshHelper threeToSoloNavMesh]]
    ["three/addons/controls/OrbitControls.js" :refer [OrbitControls]]
    ["three/addons/environments/RoomEnvironment.js" :refer [RoomEnvironment]]
@@ -238,5 +238,5 @@
                                                    (.step world) ; rapier world update
                                                    (.render renderer scene camera))))))))))
 
-(-> (.all js/Promise [(.init rapier) (init)])
+(-> (.all js/Promise [(.init rapier) (initRecast)])
     (.then app))
