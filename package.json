@@ -1,26 +1,30 @@
 {
-  "name": "cljs-threejs-rapier-recast",
+  "name": "squint-threejs-rapier-recast",
   "version": "1.0.0",
-  "description": "Quick study over the ergonomics of using cljs + threejs + rapier + recast",
-  "homepage": "https://github.com/rafaeldelboni/cljs-threejs-rapier-recast#readme",
+  "description": "Quick study over the ergonomics of using squint + threejs + rapier + recast",
+  "homepage": "https://github.com/rafaeldelboni/squint-threejs-rapier-recast#readme",
   "bugs": {
-    "url": "https://github.com/rafaeldelboni/cljs-threejs-rapier-recast/issues"
+    "url": "https://github.com/rafaeldelboni/squint-threejs-rapier-recast/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rafaeldelboni/cljs-threejs-rapier-recast.git"
+    "url": "git+https://github.com/rafaeldelboni/squint-threejs-rapier-recast.git"
   },
   "scripts": {
-    "start": "shadow-cljs watch app",
-    "release": "shadow-cljs release app"
+    "start": "concurrently \"npx squint watch\" \"npx vite resources/public --config=vite.config.mjs\"",
+    "release": "concurrently \"npx squint compile\" \"npx vite build resources/public --config=vite.config.mjs\""
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.15.1",
     "@recast-navigation/three": "^0.39.0",
     "recast-navigation": "^0.39.0",
+    "squint-cljs": "^0.8.147",
     "three": "^0.176.0"
   },
   "devDependencies": {
-    "shadow-cljs": "^3.1.1"
+    "concurrently": "^9.1.2",
+    "rollup-plugin-visualizer": "^5.14.0",
+    "vite": "^6.3.5",
+    "vite-plugin-static-copy": "^3.0.0"
   }
 }

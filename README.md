@@ -1,13 +1,13 @@
-# cljs-threejs-rapier-recast
+# squint-threejs-rapier-recast
 
-A focused exploration of the integration between ClojureScript, Three.js, Rapier physics engine and the Recast navmesh generation and navigation.
+A focused exploration of the integration between Squint, Three.js, Rapier physics engine and the Recast navmesh generation and navigation.
 
 > **Note:** The code within this repository is part of an initial exploration and may not reflect production-ready quality or best practices.
 
 ## Workflow
 
 The primary objective of this repository is to evaluate the ergonomics and efficiency
-of a workflow that utilizes Blender for scene design and ClojureScript for implementing
+of a workflow that utilizes Blender for scene design and Squint for implementing
 the main application logic, with the goal of achieving a game engine-like development experience.
 
 ### Blender
@@ -34,7 +34,6 @@ The navimesh is being generated considering only "static" flagged objects.
 
 ## Requirements
 - [npm](https://www.npmjs.com/)
-- [clojure](https://clojure.org/)
 
 ## Instructions
 
@@ -60,6 +59,7 @@ npx http-server resources/public -g
 ```
 
 ## Javascript Libraries
+- [squint](https://github.com/squint-cljs/squint)
 - [three](https://github.com/mrdoob/three.js)
 - [rapier](https://github.com/dimforge/rapier.js)
 - [recast](https://github.com/isaac-mason/recast-navigation-js)
@@ -67,3 +67,4 @@ npx http-server resources/public -g
 ## Another studies
 - [cljs-babylon-havok](https://github.com/rafaeldelboni/cljs-babylon-havok)
 - [cljs-threejs-rapier](https://github.com/rafaeldelboni/cljs-threejs-rapier)
+- [cljs-threejs-rapier-recast](https://github.com/rafaeldelboni/cljs-threejs-rapier-recast)
