@@ -8,11 +8,15 @@ body {
   overscroll-behavior: none;
 }
 
+a {
+  color: #f00;
+}
+
 #info {
   position: absolute;
   top: 0px;
   width: 100%;
-  padding: 12px;
+  padding: 10px;
   box-sizing: border-box;
   text-align: center;
   -moz-user-select: none;
@@ -21,5 +25,12 @@ body {
   user-select: none;
   pointer-events: none;
   z-index: 1;
-  background-color: rgba(0, 0, 0, 0.75);
+  /* TODO Solve this in HTML */
+}
+
+a,
+button,
+input,
+select {
+  pointer-events: auto;
 }
