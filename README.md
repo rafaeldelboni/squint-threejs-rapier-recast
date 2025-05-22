@@ -30,6 +30,8 @@ The resulting output after rendering the scene and enabling the physics simulati
 
 ![render-result](docs/render-result.png)
 
+The navimesh is being generated considering only "static" flagged objects.
+
 ## Requirements
 - [npm](https://www.npmjs.com/)
 - [clojure](https://clojure.org/)
@@ -57,5 +59,11 @@ gzip resources/public/js/*.js
 npx http-server resources/public -g
 ```
 
-## Another study
+## Javascript Libraries
+- [three](https://github.com/mrdoob/three.js)
+- [rapier](https://github.com/dimforge/rapier.js)
+- [recast](https://github.com/isaac-mason/recast-navigation-js)
+
+## Another studies
 - [cljs-babylon-havok](https://github.com/rafaeldelboni/cljs-babylon-havok)
+- [cljs-threejs-rapier](https://github.com/rafaeldelboni/cljs-threejs-rapier)
