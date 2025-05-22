@@ -31,4 +31,5 @@ pom.xml.asc
 .hgignore
 .hg/
 
+bundle-visualization.html
 .bundle.meta.json
